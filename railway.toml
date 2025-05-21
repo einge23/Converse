@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "make build"
+buildCommand = "make deps && make build"
 
 [deploy]
 startCommand = "make run"
