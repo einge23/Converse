@@ -1,8 +1,8 @@
 [build]
 builder = "nixpacks"
-buildCommand = "go mod init converse && make deps && make build"
+buildCommand = "go mod download && go build -o bin/converse main.go"
 
 [deploy]
-startCommand = "make run"
+startCommand = "./bin/converse"
 healthcheckPath = "/health"
 healthcheckTimeout = 100
