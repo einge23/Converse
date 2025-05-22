@@ -2,7 +2,6 @@ package main
 
 import (
 	"log"
-	"os"
 
 	"converse/config"
 
@@ -25,13 +24,11 @@ func main() {
 		})
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		log.Fatalf("PORT is not set")
-		return
-	}
+	port := cfg.Port
+	log.Printf("Starting server on port %s", port)
 
-	if err := r.Run(":" + port); err != nil {
+	addr := ":" + port
+	if err := r.Run(addr); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
