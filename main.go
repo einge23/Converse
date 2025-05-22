@@ -4,10 +4,19 @@ import (
 	"log"
 	"os"
 
+	"converse/config"
+
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+
+	cfg := config.New()
+
+	if cfg.IsProduction() {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
@@ -18,7 +27,8 @@ func main() {
 
 	port := os.Getenv("PORT")
 	if port == "" {
-		port = "8080"
+		log.Fatalf("PORT is not set")
+		return
 	}
 
 	if err := r.Run(":" + port); err != nil {
