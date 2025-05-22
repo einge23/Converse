@@ -2,12 +2,20 @@ package main
 
 import (
 	"log"
-	"os"
+
+	"converse/config"
 
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
+
+	cfg := config.New()
+
+	if cfg.IsProduction() {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
@@ -16,12 +24,11 @@ func main() {
 		})
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
+	port := cfg.Port
+	log.Printf("Starting server on port %s", port)
 
-	if err := r.Run(":" + port); err != nil {
+	addr := ":" + port
+	if err := r.Run(addr); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
 }
