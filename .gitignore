@@ -28,7 +28,6 @@ go.work
 .DS_Store
 Thumbs.db 
 
-go.mod
 go.sum
 
 .env
