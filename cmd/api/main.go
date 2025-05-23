@@ -50,7 +50,6 @@ func main() {
 
 }
 
-
 func setupRoutes(r *gin.Engine) {
     // API v1 routes
     v1 := r.Group("/api/v1")
