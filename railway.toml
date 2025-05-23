@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "go mod tidy && go build -o bin/converse main.go"
+buildCommand = "go mod tidy && go build -o bin/converse cmd/api/main.go"
 
 [deploy]
 startCommand = "./bin/converse"

@@ -13,10 +13,10 @@ type Config struct {
 	ShutdownTimeout time.Duration
 	Environment     string
 	LogLevel        string
+	DatabaseURL     string
 }
 
 func New() *Config {
-	// Load .env file
 	if err := godotenv.Load(); err != nil {
 		log.Printf("Warning: .env file not found: %v", err)
 	}
@@ -28,6 +28,7 @@ func New() *Config {
 		ShutdownTimeout: getDurationEnv("SHUTDOWN_TIMEOUT", 10*time.Second),
 		Environment:     getEnv("ENVIRONMENT", "development"),
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
+		DatabaseURL:     getEnv("DATABASE_URL", ""),
 	}
 }
 
