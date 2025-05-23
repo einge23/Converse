@@ -38,3 +38,22 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
     }
     return &user, nil
 }
+
+func (r *UserRepository) FindByUsernameOrEmail(username, email string) (*models.User, error) {
+    var user models.User
+    err := r.db.Where("username = ? OR email = ?", username, email).First(&user).Error
+    if err != nil {
+        return nil, err
+    }
+    return &user, nil
+}
+
+func (r *UserRepository) FindByID(userID string) (*models.User, error) {
+	var user models.User
+	err := r.db.Where("user_id = ?", userID).First(&user).Error
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}
+

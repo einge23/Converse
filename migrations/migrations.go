@@ -9,7 +9,7 @@ import (
 func RunMigrations() error {
     database := db.GetDB()
 
-    err := database.AutoMigrate(&models.User{})
+    err := database.AutoMigrate(&models.User{}, &models.Session{})
     if err != nil {
         return err
     }

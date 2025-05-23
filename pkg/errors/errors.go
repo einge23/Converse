@@ -26,3 +26,25 @@ func NewBadRequestError(message string, details string) *AppError {
         Details: details,
     }
 }
+
+func NewUnauthorizedError(message string, details string) *AppError {
+	return &AppError{
+		Code:    http.StatusUnauthorized,
+		Message: message,
+		Details: details,
+	}
+}
+
+func NewInternalServerError(message string) *AppError {
+	return &AppError{
+		Code:    http.StatusInternalServerError,
+		Message: message,
+	}
+}
+
+func NewForbiddenError(message string) *AppError {
+	return &AppError{
+		Code:    http.StatusForbidden,
+		Message: message,
+	}
+}

@@ -9,6 +9,12 @@ type RegisterRequest struct {
     DisplayName string `json:"display_name"`
 }
 
+type LoginRequest struct {
+    Email    string `json:"email" binding:"omitempty,email"`
+    Password string `json:"password" binding:"required,min=6"`
+    Username string `json:"username" binding:"omitempty,min=3,max=50"`
+}
+
 type AuthResponse struct {
     UserID      string    `json:"user_id"`
     Username    string    `json:"username"`
@@ -16,4 +22,5 @@ type AuthResponse struct {
     DisplayName string    `json:"display_name"`
     Token       string    `json:"token"`
     ExpiresAt   time.Time `json:"expires_at"`
+	SessionID   string    `json:"session_id"`
 }

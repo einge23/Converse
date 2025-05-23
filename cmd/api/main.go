@@ -54,18 +54,41 @@ func setupRoutes(r *gin.Engine) {
     // API v1 routes
     v1 := r.Group("/api/v1")
     {
+        authHandler := handlers.NewAuthHandler()
+
         // Auth routes
         auth := v1.Group("/auth")
         {
-            authHandler := handlers.NewAuthHandler()
             auth.POST("/register", authHandler.Register)
+            auth.POST("/login", authHandler.Login)
+            auth.GET("/validate-session", authHandler.ValidateSession)
         }
 
         // Protected routes
         protected := v1.Group("/")
         protected.Use(middleware.AuthMiddleware())
         {
-            // Add protected routes here
+            // Auth management routes
+            auth := protected.Group("/auth")
+            {
+                auth.POST("/logout", authHandler.Logout)
+            }
+
+            // Session management routes
+            sessions := protected.Group("/sessions")
+            {
+                sessions.GET("", authHandler.GetSessions)
+                sessions.POST("/logout-all", authHandler.LogoutAllSessions)
+            }
+
+            // User-specific routes
+            users := protected.Group("/users/:user_id")
+            users.Use(middleware.OwnResourceMiddleware())
+            {
+                // Add user-specific routes here
+                // Example: users.GET("/profile", userHandler.GetProfile)
+                // Example: users.PUT("/profile", userHandler.UpdateProfile)
+            }
         }
     }
 }
