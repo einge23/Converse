@@ -20,43 +20,47 @@ func NewAuthHandler() *AuthHandler {
     }
 }
 
-
 func(h *AuthHandler) Register(c *gin.Context) {
 	var req types.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, &errors.AppError{
-            Code:    http.StatusBadRequest,
-            Message: "Invalid request body",
-            Details: err.Error(),
-        })
-        return
-    }
+		c.JSON(http.StatusBadRequest, &errors.AppError{
+			Code:    http.StatusBadRequest,
+			Message: "Invalid request body",
+			Details: err.Error(),
+		})
+		return
+	}
 
 	if err := validatePassword(req.Password); err != nil {
-        c.JSON(http.StatusBadRequest, err)
-        return
-    }
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
 
-    if err := validateUsername(req.Username); err != nil {
-        c.JSON(http.StatusBadRequest, err)
-        return
-    }
+	if err := validateUsername(req.Username); err != nil {
+		c.JSON(http.StatusBadRequest, err)
+		return
+	}
 
-	response, err := h.authService.Register(req)
-    if err != nil {
-        switch appErr := err.(type) {
-        case *errors.AppError:
-            c.JSON(appErr.Code, appErr)
-        default:
-            c.JSON(http.StatusInternalServerError, &errors.AppError{
-                Code:    http.StatusInternalServerError,
-                Message: "Internal server error",
-            })
-        }
-        return
-    }
+	// Get client information
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	deviceID := c.GetHeader("X-Device-ID")
 
-    c.JSON(http.StatusCreated, response)
+	response, err := h.authService.Register(req, ipAddress, userAgent, deviceID)
+	if err != nil {
+		switch appErr := err.(type) {
+		case *errors.AppError:
+			c.JSON(appErr.Code, appErr)
+		default:
+			c.JSON(http.StatusInternalServerError, &errors.AppError{
+				Code:    http.StatusInternalServerError,
+				Message: "Internal server error",
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusCreated, response)
 }
 
 func(h *AuthHandler) Login(c *gin.Context) {
@@ -131,36 +135,6 @@ func validateUsername(username string) *errors.AppError {
     return nil
 }
 
-func (h *AuthHandler) Logout(c *gin.Context) {
-	sessionID := c.GetHeader("X-Session-ID")
-	if sessionID == "" {
-		c.JSON(http.StatusBadRequest, &errors.AppError{
-			Code:    http.StatusBadRequest,
-			Message: "Session ID is required",
-		})
-		return
-	}
-
-	userID, _ := c.Get("user_id")
-	if err := h.authService.Logout(sessionID, userID.(string)); err != nil {
-		switch appErr := err.(type) {
-		case *errors.AppError:
-			c.JSON(appErr.Code, appErr)
-		default:
-			c.JSON(http.StatusInternalServerError, &errors.AppError{
-				Code:    http.StatusInternalServerError,
-				Message: "Failed to logout",
-				Details: err.Error(),
-			})
-		}
-		return
-	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"message": "Successfully logged out",
-	})
-}
-
 func (h *AuthHandler) ValidateSession(c *gin.Context) {
 	sessionID := c.GetHeader("X-Session-ID")
 	if sessionID == "" {
@@ -195,35 +169,32 @@ func (h *AuthHandler) ValidateSession(c *gin.Context) {
 	})
 }
 
-func (h *AuthHandler) GetSessions(c *gin.Context) {
-	userID, _ := c.Get("user_id")
-	sessions, err := h.authService.GetUserSessions(userID.(string))
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, &errors.AppError{
-			Code:    http.StatusInternalServerError,
-			Message: "Failed to get sessions",
-			Details: err.Error(),
+func (h *AuthHandler) Logout(c *gin.Context) {
+	sessionID := c.GetHeader("X-Session-ID")
+	if sessionID == "" {
+		c.JSON(http.StatusBadRequest, &errors.AppError{
+			Code:    http.StatusBadRequest,
+			Message: "Session ID is required",
 		})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"sessions": sessions,
-	})
-}
-
-func (h *AuthHandler) LogoutAllSessions(c *gin.Context) {
 	userID, _ := c.Get("user_id")
-	if err := h.authService.LogoutAllSessions(userID.(string)); err != nil {
-		c.JSON(http.StatusInternalServerError, &errors.AppError{
-			Code:    http.StatusInternalServerError,
-			Message: "Failed to logout all sessions",
-			Details: err.Error(),
-		})
+	if err := h.authService.Logout(sessionID, userID.(string)); err != nil {
+		switch appErr := err.(type) {
+		case *errors.AppError:
+			c.JSON(appErr.Code, appErr)
+		default:
+			c.JSON(http.StatusInternalServerError, &errors.AppError{
+				Code:    http.StatusInternalServerError,
+				Message: "Failed to logout",
+				Details: err.Error(),
+			})
+		}
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"message": "Successfully logged out from all devices",
+		"message": "Successfully logged out",
 	})
 }

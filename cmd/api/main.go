@@ -9,11 +9,11 @@ import (
 	"converse/internal/middleware"
 	"converse/migrations"
 
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
-
 	cfg := config.New()
 
 	if err := db.Init(cfg); err != nil {
@@ -31,6 +31,16 @@ func main() {
 
 	r := gin.Default()
 
+	// Configure CORS
+	r.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"http://localhost:5173", "https://converse-development-app.up.railway.app"},
+		AllowMethods:     []string{"GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Accept", "Authorization", "x-device-id", "x-session-id"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * 60 * 60,
+	}))
+
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "OK",
@@ -46,8 +56,6 @@ func main() {
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
 	}
-
-
 }
 
 func setupRoutes(r *gin.Engine) {
@@ -74,20 +82,11 @@ func setupRoutes(r *gin.Engine) {
                 auth.POST("/logout", authHandler.Logout)
             }
 
-            // Session management routes
-            sessions := protected.Group("/sessions")
-            {
-                sessions.GET("", authHandler.GetSessions)
-                sessions.POST("/logout-all", authHandler.LogoutAllSessions)
-            }
-
             // User-specific routes
             users := protected.Group("/users/:user_id")
             users.Use(middleware.OwnResourceMiddleware())
             {
                 // Add user-specific routes here
-                // Example: users.GET("/profile", userHandler.GetProfile)
-                // Example: users.PUT("/profile", userHandler.UpdateProfile)
             }
         }
     }

@@ -40,12 +40,6 @@ func (r *SessionRepository) FindByToken(token string) (*models.Session, error) {
 	return &session, nil
 }
 
-func (r *SessionRepository) UpdateLastActive(sessionID string) error {
-	return r.db.Model(&models.Session{}).
-		Where("session_id = ?", sessionID).
-		Update("last_active", time.Now()).Error
-}
-
 func (r *SessionRepository) Invalidate(sessionID string) error {
 	return r.db.Model(&models.Session{}).
 		Where("session_id = ?", sessionID).

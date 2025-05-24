@@ -16,11 +16,7 @@ type LoginRequest struct {
 }
 
 type AuthResponse struct {
-    UserID      string    `json:"user_id"`
-    Username    string    `json:"username"`
-    Email       string    `json:"email"`
-    DisplayName string    `json:"display_name"`
-    Token       string    `json:"token"`
-    ExpiresAt   time.Time `json:"expires_at"`
-	SessionID   string    `json:"session_id"`
+    Token     string    `json:"token"`
+    ExpiresAt time.Time `json:"expires_at"`
+    SessionID string    `json:"session_id"`
 }
