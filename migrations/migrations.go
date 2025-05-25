@@ -16,10 +16,10 @@ func RunMigrations() error {
         &models.Session{},
         &friends.FriendRequest{},
         &friends.Friendship{},
-        &models.Room{},
-        &models.RoomMember{},
-        &models.Message{},
-        &models.DirectMessageThread{},
+        // &models.Room{},
+        // &models.RoomMember{},
+        // &models.Message{},
+        // &models.DirectMessageThread{},
     )
     if err != nil {
         return err
