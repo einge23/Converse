@@ -23,10 +23,10 @@ func (r *FriendRequestRepository) Create(friendRequest *friends.FriendRequest) e
 	return r.db.Create(friendRequest).Error
 }
 
-func (r *FriendRequestRepository) UpdateStatus(friendRequestID uint64, status string) error {
+func (r *FriendRequestRepository) DeclineFriendRequest(friendRequestID uint64) error {
 	return r.db.Model(&friends.FriendRequest{}).
 		Where("friend_request_id = ?", friendRequestID).
-		Update("status", status).Error
+		Update("status", "declined").Error
 }
 
 func (r *FriendRequestRepository) GetUserFriendRequests(userID string) ([]*friends.FriendRequest, error) {
