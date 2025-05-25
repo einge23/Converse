@@ -45,9 +45,20 @@ func (r *UserRepository) FindByEmail(email string) (*models.User, error) {
 
 func (r *UserRepository) FindByUsernameOrEmail(username, email string) (*models.User, error) {
 	var user models.User
-	err := r.db.Select("user_id, username, email, password_hash, display_name, avatar_url, status, last_active_at, created_at, updated_at").
-		Where("username = ? OR email = ?", username, email).
-		First(&user).Error
+	
+	// Use UNION to avoid OR condition
+	query := `
+		SELECT user_id, username, email, password_hash, display_name, avatar_url, status, last_active_at, created_at, updated_at 
+		FROM users 
+		WHERE username = ? 
+		UNION 
+		SELECT user_id, username, email, password_hash, display_name, avatar_url, status, last_active_at, created_at, updated_at 
+		FROM users 
+		WHERE email = ? 
+		LIMIT 1
+	`
+	
+	err := r.db.Raw(query, username, email).First(&user).Error
 	if err != nil {
 		return nil, err
 	}
