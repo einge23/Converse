@@ -17,19 +17,14 @@ func NewFriendRequestService() *FriendRequestService {
 }
 
 func (s *FriendRequestService) CreateFriendRequest(request types.CreateFriendRequest, requesterID string) error {
-	friendRequest := &friends.FriendRequest{
-		RequesterID: requesterID,
-		RecipientID: request.RecipientID,
-	}
-
-	return s.friendRequestRepo.Create(friendRequest)
+	return s.friendRequestRepo.Create(request.Username, requesterID)
 }
 
 func (s *FriendRequestService) DeclineFriendRequest(friendRequestID uint64) error {
 	return s.friendRequestRepo.DeclineFriendRequest(friendRequestID)
 }
 
-func (s *FriendRequestService) GetUserFriendRequests(userID string) ([]*friends.FriendRequest, error) {
+func (s *FriendRequestService) GetUserFriendRequests(userID string) ([]*friends.FriendRequestWithUser, error) {
 	return s.friendRequestRepo.GetUserFriendRequests(userID)
 }
 

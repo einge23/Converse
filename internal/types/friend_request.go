@@ -1,5 +1,5 @@
 package types
 
 type CreateFriendRequest struct {
-	RecipientID string `json:"recipient_id" binding:"required,uuid"`
+	Username string `json:"username" binding:"required"`
 }

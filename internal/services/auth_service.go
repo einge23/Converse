@@ -168,3 +168,11 @@ func (s *AuthService) Logout(sessionID, userID string) error {
 
 	return s.sessionRepo.Invalidate(sessionID)
 }
+
+func (s *AuthService) Me(userID string) (*models.PublicUser, error) {
+	user, err := s.userRepo.FindPublicUserByID(userID)
+	if err != nil {
+		return nil, errors.NewUnauthorizedError("User not found", "Please login again")
+	}
+	return user, nil
+}

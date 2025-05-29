@@ -198,3 +198,31 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		"message": "Successfully logged out",
 	})
 }
+
+func (h *AuthHandler) Me(c *gin.Context) {
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, &errors.AppError{
+			Code:    http.StatusUnauthorized,
+			Message: "User ID not found in token",
+		})
+		return
+	}
+
+	user, err := h.authService.Me(userID.(string))
+	if err != nil {
+		switch appErr := err.(type) {
+		case *errors.AppError:
+			c.JSON(appErr.Code, appErr)
+		default:
+			c.JSON(http.StatusInternalServerError, &errors.AppError{
+				Code:    http.StatusInternalServerError,
+				Message: "Failed to retrieve user information",
+				Details: err.Error(),
+			})
+		}
+		return
+	}
+
+	c.JSON(http.StatusOK, user)
+}

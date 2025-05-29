@@ -100,20 +100,30 @@ func OwnResourceMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, exists := c.Get("user_id")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			c.JSON(http.StatusUnauthorized, &errors.AppError{
+				Code:    http.StatusUnauthorized,
+				Message: "User not authenticated",
+			})
 			c.Abort()
 			return
 		}
 
 		resourceID := c.Param("user_id")
 		if resourceID == "" {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "user_id parameter is required"})
+			c.JSON(http.StatusBadRequest, &errors.AppError{
+				Code:    http.StatusBadRequest,
+				Message: "user_id parameter is required in the URL path",
+				Details: "This endpoint requires a user_id parameter in the URL (e.g., /users/:user_id/resource)",
+			})
 			c.Abort()
 			return
 		}
 
 		if userID != resourceID {
-			c.JSON(http.StatusForbidden, gin.H{"error": "access denied"})
+			c.JSON(http.StatusForbidden, &errors.AppError{
+				Code:    http.StatusForbidden,
+				Message: "Access denied - you can only access your own resources",
+			})
 			c.Abort()
 			return
 		}

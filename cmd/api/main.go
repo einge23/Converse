@@ -64,6 +64,7 @@ func setupRoutes(r *gin.Engine) {
     {
         authHandler := handlers.NewAuthHandler()
 		friendRequestHandler := handlers.NewFriendRequestHandler()
+		friendshipHandler := handlers.NewFriendshipHandler()
 
         // Auth routes
         auth := v1.Group("/auth")
@@ -87,10 +88,12 @@ func setupRoutes(r *gin.Engine) {
 			{
 				friend_requests.POST("/", friendRequestHandler.CreateFriendRequest)
 			}
-
+			
 			friend_requests.Use(middleware.AuthMiddleware())
 			{
 				friend_requests.GET("/", friendRequestHandler.GetUserFriendRequests)
+				friend_requests.PUT("/:friend_request_id/accept", friendRequestHandler.AcceptFriendRequest)
+				friend_requests.PUT("/:friend_request_id/decline", friendRequestHandler.DeclineFriendRequest)
 			}
 
 			friend_requests.Use(middleware.OwnResourceMiddleware())
@@ -99,12 +102,10 @@ func setupRoutes(r *gin.Engine) {
 				friend_requests.POST("/:friend_request_id/decline", friendRequestHandler.DeclineFriendRequest)
 			}
 
-            // User-specific routes
-            users := protected.Group("/users/:user_id")
-            users.Use(middleware.OwnResourceMiddleware())
-            {
-                // Add user-specific routes here
-            }
+            friendships := protected.Group("/friends").Use(middleware.AuthMiddleware())
+			{
+				friendships.GET("/", friendshipHandler.GetFriends)
+			}
         }
     }
 }

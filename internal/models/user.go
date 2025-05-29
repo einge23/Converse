@@ -27,6 +27,7 @@ type User struct {
 	LastActiveAt *time.Time `gorm:"column:last_active_at;type:timestamp;null"`
 	CreatedAt    time.Time  `gorm:"column:created_at;type:timestamp;not null;default:CURRENT_TIMESTAMP"`
 	UpdatedAt    time.Time  `gorm:"column:updated_at;type:timestamp;not null;default:CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP"`
+	DeletedAt    *time.Time `gorm:"column:deleted_at;type:timestamp;default:NULL"`
 }
 
 func (User) TableName() string {
@@ -43,4 +44,32 @@ func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
 func (u *User) BeforeUpdate(tx *gorm.DB) error {
     u.UpdatedAt = time.Now()
     return nil
+}
+
+type PublicUser struct {
+	UserID       string     `json:"user_id"`
+	Username     string     `json:"username"`
+	Email        string     `json:"email"`
+	DisplayName  string     `json:"display_name"`
+	AvatarURL    string     `json:"avatar_url"`
+	Status       UserStatus `json:"status"`
+	LastActiveAt *time.Time `json:"last_active_at"`
+	CreatedAt    time.Time  `json:"created_at"`
+	UpdatedAt    time.Time  `json:"updated_at"`
+	DeletedAt    *time.Time `json:"deleted_at"`
+}
+
+func (u *User) ToPublicUser() *PublicUser {
+	return &PublicUser{
+		UserID:       u.UserID,
+		Username:     u.Username,
+		Email:        u.Email,
+		DisplayName:  u.DisplayName,
+		AvatarURL:    u.AvatarURL,
+		Status:       u.Status,
+		LastActiveAt: u.LastActiveAt,
+		CreatedAt:    u.CreatedAt,
+		UpdatedAt:    u.UpdatedAt,
+		DeletedAt:    u.DeletedAt,
+	}
 }

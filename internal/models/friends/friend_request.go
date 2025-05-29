@@ -1,6 +1,9 @@
 package friends
 
-import "time"
+import (
+	"converse/internal/models"
+	"time"
+)
 
 type FriendRequest struct {
     FriendRequestID          uint64    `json:"friend_request_id" gorm:"primaryKey;autoIncrement"`
@@ -9,6 +12,17 @@ type FriendRequest struct {
     Status      string    `json:"status" gorm:"type:enum('pending', 'accepted', 'declined');default:'pending'"`
     CreatedAt   time.Time `json:"created_at" gorm:"autoCreateTime"`
     UpdatedAt   time.Time `json:"updated_at" gorm:"autoUpdateTime"`
+}
+
+// FriendRequestWithUser combines friend request data with requester's public user info
+type FriendRequestWithUser struct {
+    FriendRequestID uint64               `json:"friend_request_id"`
+    RequesterID     string               `json:"requester_id"`
+    RecipientID     string               `json:"recipient_id"`
+    Status          string               `json:"status"`
+    CreatedAt       time.Time            `json:"created_at"`
+    UpdatedAt       time.Time            `json:"updated_at"`
+    Requester       models.PublicUser    `json:"requester" gorm:"embedded;embeddedPrefix:user_"`
 }
 
 func (FriendRequest) TableName() string {
