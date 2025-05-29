@@ -66,6 +66,7 @@ func setupRoutes(r *gin.Engine) {
 		friendRequestHandler := handlers.NewFriendRequestHandler()
 		friendshipHandler := handlers.NewFriendshipHandler()
 
+
         // Auth routes
         auth := v1.Group("/auth")
         {
@@ -73,6 +74,9 @@ func setupRoutes(r *gin.Engine) {
             auth.POST("/login", authHandler.Login)
             auth.GET("/validate-session", authHandler.ValidateSession)
         }
+
+        // User profile endpoint
+        v1.GET("/me", middleware.AuthMiddleware(), authHandler.Me)
 
         // Protected routes
         protected := v1.Group("/")
