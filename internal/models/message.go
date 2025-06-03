@@ -4,6 +4,9 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // Metadata represents the JSON metadata field for messages
@@ -48,4 +51,11 @@ type Message struct {
 
 func (Message) TableName() string {
 	return "messages"
+}
+
+func (m *Message) BeforeCreate(tx *gorm.DB) (err error) {
+	if m.MessageID == "" {
+		m.MessageID = uuid.New().String()
+	}
+	return nil
 }

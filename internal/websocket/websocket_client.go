@@ -1,6 +1,7 @@
 package websocket
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"time"
@@ -45,10 +46,51 @@ func (c *Client) readPump() {
             break
         }
 
-		// Handle incoming messages here
-        // You can parse the message and route it accordingly
-        log.Printf("Received message from %s: %s", c.UserID, message)
+		// Parse the incoming message
+        var incomingMsg IncomingMessage
+        if err := json.Unmarshal(message, &incomingMsg); err != nil {
+            log.Printf("Error parsing message from %s: %v", c.UserID, err)
+            c.hub.sendErrorToClient(c, "Invalid message format")
+            continue
+        }
+
+        log.Printf("Received message from %s: type=%s, content=%s", c.UserID, incomingMsg.Type, incomingMsg.Content)        // Route the message based on type
+        switch incomingMsg.Type {
+        case MessageTypeNewMessage:
+            c.hub.ProcessIncomingMessage(c, incomingMsg)
+        case MessageTypeTyping:
+            c.handleTypingIndicator(incomingMsg, true)
+        case MessageTypeStopTyping:
+            c.handleTypingIndicator(incomingMsg, false)
+        case MessageTypePing:
+            c.handlePing()
+        default:
+            log.Printf("Unknown message type from %s: %s", c.UserID, incomingMsg.Type)
+            c.hub.sendErrorToClient(c, "Unknown message type")
+        }
 	}
+}
+
+// handleTypingIndicator handles typing indicator messages
+func (c *Client) handleTypingIndicator(msg IncomingMessage, isTyping bool) {
+    messageType := MessageTypeStopTyping
+    if isTyping {
+        messageType = MessageTypeTyping
+    }
+
+    typingMsg := OutgoingMessage{
+        Type:     messageType,
+        RoomID:   msg.RoomID,
+        ThreadID: msg.ThreadID,
+        SenderID: c.UserID,
+    }
+
+    // Route typing indicator to appropriate recipients
+    if msg.RoomID != nil {
+        c.hub.SendToRoom(*msg.RoomID, typingMsg, c.UserID)
+    } else if msg.ThreadID != nil {
+        c.hub.SendToThread(*msg.ThreadID, typingMsg, c.UserID)
+    }
 }
 
 func (c *Client) writePump() {
@@ -91,6 +133,27 @@ func (c *Client) writePump() {
             }
         }
 	}
+}
+
+// handlePing responds to ping messages with a pong
+func (c *Client) handlePing() {
+    pongMsg := OutgoingMessage{
+        Type:     MessageTypePong,
+        SenderID: c.UserID,
+    }
+
+    messageBytes, err := json.Marshal(pongMsg)
+    if err != nil {
+        log.Printf("Error marshaling pong message for %s: %v", c.UserID, err)
+        return
+    }
+
+    select {
+    case c.send <- messageBytes:
+        log.Printf("Pong sent to %s", c.UserID)
+    default:
+        log.Printf("Failed to send pong to %s", c.UserID)
+    }
 }
 
 func ServeWS(hub *Hub, c *gin.Context) {

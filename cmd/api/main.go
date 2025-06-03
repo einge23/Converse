@@ -69,6 +69,7 @@ func setupRoutes(r *gin.Engine, hub *websocket.Hub) {
         authHandler := handlers.NewAuthHandler()
 		friendRequestHandler := handlers.NewFriendRequestHandler()
 		friendshipHandler := handlers.NewFriendshipHandler()
+		messageHandler := handlers.NewMessageHandler()
 		wsHandler := handlers.NewWebSocketHandler(hub)
 
 
@@ -111,11 +112,21 @@ func setupRoutes(r *gin.Engine, hub *websocket.Hub) {
 				friend_requests.POST("/:friend_request_id/accept", friendRequestHandler.AcceptFriendRequest)
 				friend_requests.POST("/:friend_request_id/decline", friendRequestHandler.DeclineFriendRequest)
 			}
-
-            friendships := protected.Group("/friends").Use(middleware.AuthMiddleware())
+			
+			friendships := protected.Group("/friends").Use(middleware.AuthMiddleware())
 			{
 				friendships.GET("/", friendshipHandler.GetFriends)
 			}
+
+            // Message routes
+            messages := protected.Group("/messages").Use(middleware.AuthMiddleware())
+            {
+                // Room messages
+                messages.GET("/rooms/:room_id", messageHandler.GetMessagesByRoomID)
+                
+                // Thread messages
+                messages.GET("/threads/:thread_id", messageHandler.GetMessagesByThreadID)
+            }
         }
     }
 }
