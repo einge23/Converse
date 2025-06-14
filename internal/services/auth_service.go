@@ -59,18 +59,25 @@ func (s *AuthService) Register(req types.RegisterRequest, ipAddress, userAgent, 
 		return nil, err
 	}
 
+	refreshToken, refreshExpiresAt, err := utils.GenerateRefreshToken(user)
+    if err != nil {
+        return nil, err
+    }
+
 	// Create a new session
 	session := &models.Session{
-		SessionID:  uuid.New().String(),
-		UserID:     user.UserID,
-		Token:      token,
-		ExpiresAt:  expiresAt,
-		CreatedAt:  time.Now(),
-		IsValid:    true,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		DeviceID:   deviceID,
-	}
+        SessionID:        uuid.New().String(),
+        UserID:          user.UserID,
+        Token:           token,
+        RefreshToken:    refreshToken,
+        ExpiresAt:       expiresAt,
+        RefreshExpiresAt: refreshExpiresAt,
+        CreatedAt:       time.Now(),
+        IsValid:         true,
+        IPAddress:       ipAddress,
+        UserAgent:       userAgent,
+        DeviceID:        deviceID,
+    }
 
 	if err := s.sessionRepo.Create(session); err != nil {
 		return nil, err
@@ -78,6 +85,7 @@ func (s *AuthService) Register(req types.RegisterRequest, ipAddress, userAgent, 
 
 	return &types.AuthResponse{
 		Token:     token,
+		RefreshToken: refreshToken,
 		ExpiresAt: expiresAt,
 		SessionID: session.SessionID,
 	}, nil
@@ -88,6 +96,7 @@ func (s *AuthService) Login(req types.LoginRequest, ipAddress, userAgent, device
 	if err != nil {
 		return nil, errors.NewUnauthorizedError("Invalid credentials", "User not found")
 	}
+	
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password))
 	if err != nil {
@@ -99,6 +108,11 @@ func (s *AuthService) Login(req types.LoginRequest, ipAddress, userAgent, device
 		return nil, err
 	}
 
+	refreshToken, refreshExpiresAt, err := utils.GenerateRefreshToken(user)
+    if err != nil {
+        return nil, err
+    }
+
 	// Invalidate any existing sessions for this user
 	if err := s.sessionRepo.InvalidateAllForUser(user.UserID); err != nil {
 		return nil, err
@@ -106,16 +120,18 @@ func (s *AuthService) Login(req types.LoginRequest, ipAddress, userAgent, device
 
 	// Create a new session
 	session := &models.Session{
-		SessionID:  uuid.New().String(),
-		UserID:     user.UserID,
-		Token:      token,
-		ExpiresAt:  expiresAt,
-		CreatedAt:  time.Now(),
-		IsValid:    true,
-		IPAddress:  ipAddress,
-		UserAgent:  userAgent,
-		DeviceID:   deviceID,
-	}
+        SessionID:        uuid.New().String(),
+        UserID:          user.UserID,
+        Token:           token,
+        RefreshToken:    refreshToken,
+        ExpiresAt:       expiresAt,
+        RefreshExpiresAt: refreshExpiresAt,
+        CreatedAt:       time.Now(),
+        IsValid:         true,
+        IPAddress:       ipAddress,
+        UserAgent:       userAgent,
+        DeviceID:        deviceID,
+    }
 
 	if err := s.sessionRepo.Create(session); err != nil {
 		return nil, err
@@ -125,9 +141,55 @@ func (s *AuthService) Login(req types.LoginRequest, ipAddress, userAgent, device
 
 	return &types.AuthResponse{
 		Token:     token,
+		RefreshToken: refreshToken,
 		ExpiresAt: expiresAt,
 		SessionID: session.SessionID,
 	}, nil
+}
+
+func (s *AuthService) RefreshToken(refreshTokenStr string, ipAddress, userAgent, deviceID string) (*types.AuthResponse, error) {
+	claims, err := utils.ValidateToken(refreshTokenStr)
+    if err != nil {
+        return nil, errors.NewUnauthorizedError("Invalid refresh token", "Please login again")
+    }
+
+	session, err := s.sessionRepo.FindByRefreshToken(refreshTokenStr)
+    if err != nil {
+        return nil, errors.NewUnauthorizedError("Invalid refresh token", "Session not found")
+    }
+
+	if deviceID != "" && session.DeviceID != deviceID {
+        s.sessionRepo.Invalidate(session.SessionID)
+        return nil, errors.NewUnauthorizedError("Invalid device", "Please login again")
+    }
+
+	user, err := s.userRepo.FindByID(claims.UserID)
+    if err != nil {
+        return nil, errors.NewUnauthorizedError("User not found", "Please login again")
+    }
+
+	newToken, newTokenExpiry, err := utils.GenerateJWT(user)
+    if err != nil {
+        return nil, err
+    }
+
+	newRefreshToken, newRefreshExpiry, err := utils.GenerateRefreshToken(user)
+    if err != nil {
+        return nil, err
+    }
+
+	err = s.sessionRepo.UpdateTokens(session.SessionID, newToken, newRefreshToken, 
+        newTokenExpiry, newRefreshExpiry)
+    if err != nil {
+        return nil, err
+    }
+
+	return &types.AuthResponse{
+        Token:        newToken,
+        RefreshToken: newRefreshToken,
+        ExpiresAt:    newTokenExpiry,
+        SessionID:    session.SessionID,
+    }, nil
 }
 
 func (s *AuthService) ValidateSession(sessionID, ipAddress, userAgent, deviceID string) (*models.User, error) {

@@ -199,6 +199,37 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 	})
 }
 
+func (h *AuthHandler) RefreshToken(c *gin.Context) {
+	var req types.RefreshTokenRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, &errors.AppError{
+            Code:    http.StatusBadRequest,
+            Message: "Invalid request body",
+            Details: err.Error(),
+        })
+        return
+    }
+
+	ipAddress := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	deviceID := c.GetHeader("X-Device-ID")
+
+    response, err := h.authService.RefreshToken(req.RefreshToken, ipAddress, userAgent, deviceID)
+	if err != nil {
+        switch appErr := err.(type) {
+        case *errors.AppError:
+            c.JSON(appErr.Code, appErr)
+        default:
+            c.JSON(http.StatusInternalServerError, &errors.AppError{
+                Code:    http.StatusInternalServerError,
+                Message: "Internal server error",
+            })
+        }
+        return
+    }
+	c.JSON(http.StatusOK, response)
+}
+
 func (h *AuthHandler) Me(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {

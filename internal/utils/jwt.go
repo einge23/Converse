@@ -17,7 +17,7 @@ type Claims struct {
 func GenerateJWT(user *models.User) (string, time.Time, error) {
     jwtSecret := []byte(os.Getenv("JWT_SECRET"))
 
-    expiresAt := time.Now().Add(24 * time.Hour)
+    expiresAt := time.Now().Add(15 * time.Minute)
 
     claims := &Claims{
         UserID: user.UserID,
@@ -39,6 +39,29 @@ func GenerateJWT(user *models.User) (string, time.Time, error) {
     }
 
     return tokenString, expiresAt, nil
+}
+
+func GenerateRefreshToken(user *models.User) (string, time.Time, error) {
+    jwtSecret := []byte(os.Getenv("JWT_SECRET"))
+    expirationTime := time.Now().Add(30 * 24 * time.Hour)
+
+    claims := &Claims{
+        UserID: user.UserID,
+        Email:  user.Email,
+        RegisteredClaims: jwt.RegisteredClaims{
+            ExpiresAt: jwt.NewNumericDate(expirationTime),
+            IssuedAt:  jwt.NewNumericDate(time.Now()),
+            Subject:   user.UserID,
+        },
+    }
+
+    token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+    tokenString, err := token.SignedString(jwtSecret)
+    if err != nil {
+        return "", time.Time{}, err
+    }
+
+    return tokenString, expirationTime, nil
 }
 
 func ValidateToken(tokenString string) (*Claims, error) {

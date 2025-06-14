@@ -63,7 +63,7 @@ func (m *MessageRepository) GetMessagesByThreadID(threadID string, limit int, of
 	var messages []*models.Message
 
 	err := m.db.Where("thread_id = ? AND deleted_at IS NULL", threadID).
-		Order("created_at ASC").
+		Order("created_at DESC").
 		Limit(limit).
 		Offset(offset).
 		Find(&messages).Error

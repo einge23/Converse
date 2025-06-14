@@ -79,6 +79,7 @@ func setupRoutes(r *gin.Engine, hub *websocket.Hub) {
             auth.POST("/register", authHandler.Register)
             auth.POST("/login", authHandler.Login)
             auth.GET("/validate-session", authHandler.ValidateSession)
+			auth.POST("/refresh", authHandler.RefreshToken)
         }
 
         // User profile endpoint
