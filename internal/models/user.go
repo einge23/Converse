@@ -47,16 +47,17 @@ func (u *User) BeforeUpdate(tx *gorm.DB) error {
 }
 
 type PublicUser struct {
-	UserID       string     `json:"user_id"`
+	UserID       string     `json:"user_id" gorm:"primaryKey"`
 	Username     string     `json:"username"`
 	Email        string     `json:"email"`
 	DisplayName  string     `json:"display_name"`
-	AvatarURL    string     `json:"avatar_url"`
-	Status       UserStatus `json:"status"`
+	AvatarURL    *string    `json:"avatar_url"`
+	Status       string     `json:"status"`
 	LastActiveAt *time.Time `json:"last_active_at"`
 	CreatedAt    time.Time  `json:"created_at"`
 	UpdatedAt    time.Time  `json:"updated_at"`
-	DeletedAt    *time.Time `json:"deleted_at"`
+	DeletedAt    *time.Time `json:"deleted_at,omitempty"`
+	DMThreadID   *string    `json:"dm_thread_id,omitempty"`
 }
 
 func (u *User) ToPublicUser() *PublicUser {
@@ -65,8 +66,8 @@ func (u *User) ToPublicUser() *PublicUser {
 		Username:     u.Username,
 		Email:        u.Email,
 		DisplayName:  u.DisplayName,
-		AvatarURL:    u.AvatarURL,
-		Status:       u.Status,
+		AvatarURL:    &u.AvatarURL,
+		Status:       string(u.Status),
 		LastActiveAt: u.LastActiveAt,
 		CreatedAt:    u.CreatedAt,
 		UpdatedAt:    u.UpdatedAt,

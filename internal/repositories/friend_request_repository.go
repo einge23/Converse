@@ -157,6 +157,17 @@ func (r *FriendRequestRepository) AcceptFriendRequest(friendRequestID uint64, us
 			}
 		}
 
+		// Create direct message thread between the two users
+		dmRepo := NewDirectMessageRepository()
+		_, err = dmRepo.CreateDirectMessageThread(friendRequest.RequesterID, friendRequest.RecipientID)
+		if err != nil {
+			return &errors.AppError{
+				Code:    http.StatusInternalServerError,
+				Message: "Failed to create direct message thread",
+				Details: err.Error(),
+			}
+		}
+
 		return nil
 	})
 }

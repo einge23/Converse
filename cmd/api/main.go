@@ -7,6 +7,7 @@ import (
 	"converse/internal/db"
 	"converse/internal/handlers"
 	"converse/internal/middleware"
+	"converse/internal/websocket"
 	"converse/migrations"
 
 	"github.com/gin-contrib/cors"
@@ -24,6 +25,9 @@ func main() {
 	if err := migrations.RunMigrations(); err != nil {
         log.Fatalf("Failed to run migrations: %v", err)
     }
+
+	hub := websocket.NewHub()
+    go hub.Run()
 
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -47,7 +51,7 @@ func main() {
 		})
 	})
 
-	setupRoutes(r)
+	setupRoutes(r, hub)
 
 	port := cfg.Port
 	log.Printf("Starting server on port %s", port)
@@ -58,13 +62,15 @@ func main() {
 	}
 }
 
-func setupRoutes(r *gin.Engine) {
+func setupRoutes(r *gin.Engine, hub *websocket.Hub) {
     // API v1 routes
     v1 := r.Group("/api/v1")
     {
         authHandler := handlers.NewAuthHandler()
 		friendRequestHandler := handlers.NewFriendRequestHandler()
 		friendshipHandler := handlers.NewFriendshipHandler()
+		messageHandler := handlers.NewMessageHandler()
+		wsHandler := handlers.NewWebSocketHandler(hub)
 
 
         // Auth routes
@@ -73,10 +79,12 @@ func setupRoutes(r *gin.Engine) {
             auth.POST("/register", authHandler.Register)
             auth.POST("/login", authHandler.Login)
             auth.GET("/validate-session", authHandler.ValidateSession)
+			auth.POST("/refresh", authHandler.RefreshToken)
         }
 
         // User profile endpoint
         v1.GET("/me", middleware.AuthMiddleware(), authHandler.Me)
+		v1.GET("/ws", wsHandler.HandleConnection)
 
         // Protected routes
         protected := v1.Group("/")
@@ -105,11 +113,21 @@ func setupRoutes(r *gin.Engine) {
 				friend_requests.POST("/:friend_request_id/accept", friendRequestHandler.AcceptFriendRequest)
 				friend_requests.POST("/:friend_request_id/decline", friendRequestHandler.DeclineFriendRequest)
 			}
-
-            friendships := protected.Group("/friends").Use(middleware.AuthMiddleware())
+			
+			friendships := protected.Group("/friends").Use(middleware.AuthMiddleware())
 			{
 				friendships.GET("/", friendshipHandler.GetFriends)
 			}
+
+            // Message routes
+            messages := protected.Group("/messages").Use(middleware.AuthMiddleware())
+            {
+                // Room messages
+                messages.GET("/rooms/:room_id", messageHandler.GetMessagesByRoomID)
+                
+                // Thread messages
+                messages.GET("/threads/:thread_id", messageHandler.GetMessagesByThreadID)
+            }
         }
     }
 }

@@ -1,6 +1,11 @@
 package models
 
-import "time"
+import (
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
+)
 
 type DirectMessageThread struct {
 	DirectMessageThreadID string    `json:"thread_id" gorm:"column:thread_id;type:char(36);primaryKey"`
@@ -15,4 +20,11 @@ type DirectMessageThread struct {
 
 func (DirectMessageThread) TableName() string {
 	return "direct_message_threads"
+}
+
+func (d *DirectMessageThread) BeforeCreate(tx *gorm.DB) (err error) {
+	if d.DirectMessageThreadID == "" {
+		d.DirectMessageThreadID = uuid.New().String()
+	}
+	return nil
 }

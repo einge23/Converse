@@ -16,7 +16,12 @@ type LoginRequest struct {
 }
 
 type AuthResponse struct {
-    Token     string    `json:"token"`
-    ExpiresAt time.Time `json:"expires_at"`
-    SessionID string    `json:"session_id"`
+    Token        string    `json:"token"`
+    RefreshToken string    `json:"refresh_token"`
+    ExpiresAt    time.Time `json:"expires_at"`
+    SessionID    string    `json:"session_id"`
+}
+
+type RefreshTokenRequest struct {
+    RefreshToken string `json:"refresh_token" binding:"required"`
 }
