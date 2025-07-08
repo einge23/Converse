@@ -7,7 +7,6 @@ import (
 	"converse/internal/db"
 	"converse/internal/handlers"
 	"converse/internal/middleware"
-	"converse/internal/websocket"
 	"converse/migrations"
 
 	"github.com/gin-contrib/cors"
@@ -25,9 +24,6 @@ func main() {
 	if err := migrations.RunMigrations(); err != nil {
         log.Fatalf("Failed to run migrations: %v", err)
     }
-
-	hub := websocket.NewHub()
-    go hub.Run()
 
 	if cfg.IsProduction() {
 		gin.SetMode(gin.ReleaseMode)
@@ -51,7 +47,7 @@ func main() {
 		})
 	})
 
-	setupRoutes(r, hub)
+	setupRoutes(r)
 
 	port := cfg.Port
 	log.Printf("Starting server on port %s", port)
@@ -62,7 +58,7 @@ func main() {
 	}
 }
 
-func setupRoutes(r *gin.Engine, hub *websocket.Hub) {
+func setupRoutes(r *gin.Engine) {
     // API v1 routes
     v1 := r.Group("/api/v1")
     {
@@ -70,7 +66,7 @@ func setupRoutes(r *gin.Engine, hub *websocket.Hub) {
 		friendRequestHandler := handlers.NewFriendRequestHandler()
 		friendshipHandler := handlers.NewFriendshipHandler()
 		messageHandler := handlers.NewMessageHandler()
-		wsHandler := handlers.NewWebSocketHandler(hub)
+		userHandler := handlers.NewUserHandler()
 
 
         // Auth routes
@@ -84,7 +80,6 @@ func setupRoutes(r *gin.Engine, hub *websocket.Hub) {
 
         // User profile endpoint
         v1.GET("/me", middleware.AuthMiddleware(), authHandler.Me)
-		v1.GET("/ws", wsHandler.HandleConnection)
 
         // Protected routes
         protected := v1.Group("/")
@@ -94,6 +89,11 @@ func setupRoutes(r *gin.Engine, hub *websocket.Hub) {
             auth := protected.Group("/auth")
             {
                 auth.POST("/logout", authHandler.Logout)
+            }
+
+			users := protected.Group("/users")
+            {
+                users.PUT("/status", userHandler.UpdateStatus)
             }
 			
 			friend_requests := protected.Group("/friend-requests")
