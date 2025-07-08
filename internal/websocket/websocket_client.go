@@ -64,6 +64,8 @@ func (c *Client) readPump() {
             c.handleTypingIndicator(incomingMsg, false)
         case MessageTypePing:
             c.handlePing()
+        case MessageTypeWebRTCOffer, MessageTypeWebRTCAnswer, MessageTypeWebRTCICE, MessageTypeWebRTCHangup:
+            c.hub.ProcessWebRTCMessage(c, incomingMsg)
         default:
             log.Printf("Unknown message type from %s: %s", c.UserID, incomingMsg.Type)
             c.hub.sendErrorToClient(c, "Unknown message type")

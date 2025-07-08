@@ -48,6 +48,3 @@ func (r *DirectMessageRepository) CreateDirectMessageThread(user1ID, user2ID str
 
 	return &newThread, nil
 }
-
-//tomorrow work on messages and retrieval for thread. then work on
-//websocket message routing

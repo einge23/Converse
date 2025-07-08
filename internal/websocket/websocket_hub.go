@@ -255,6 +255,99 @@ func (h *Hub) ProcessIncomingMessage(client *Client, incomingMsg IncomingMessage
     }
 }
 
+func (h *Hub) ProcessWebRTCMessage(client *Client, msg IncomingMessage) {
+    if(msg.WebRTC == nil) {
+        h.sendErrorToClient(client, "Missing WebRTC data")
+        return
+    }
+
+    webrtcData := msg.WebRTC
+    if webrtcData.TargetUserID == "" {
+        h.sendErrorToClient(client, "Missing target user ID for WebRTC message")
+        return
+    }
+
+    if webrtcData.SessionID == "" {
+        h.sendErrorToClient(client, "Missing session ID for WebRTC message")
+        return
+    }
+
+    switch msg.Type {
+    case MessageTypeWebRTCOffer:
+        if webrtcData.SDP == nil {
+            h.sendErrorToClient(client, "Missing SDP for WebRTC offer")
+            return
+        }
+    case MessageTypeWebRTCAnswer:
+        if webrtcData.SDP == nil {
+            h.sendErrorToClient(client, "Missing SDP for WebRTC answer")
+            return
+        }
+    case MessageTypeWebRTCICE:
+        if webrtcData.ICECandidate == nil {
+            h.sendErrorToClient(client, "Missing ICE candidate")
+            return
+        }
+    case MessageTypeWebRTCHangup:
+        // Hangup doesn't require additional data, but reason is optional
+    }
+
+    h.mutex.RLock()
+    targetClient, exists := h.userClients[webrtcData.TargetUserID]
+    h.mutex.RUnlock()
+
+    if !exists {
+        h.sendErrorToClient(client, "Target user not connected")
+        return
+    }
+
+    outgoinMsg := OutgoingMessage {
+        Type: msg.Type,
+        SenderID: client.UserID,
+        WebRTC: &WebRTCMessage{
+            TargetUserID: webrtcData.TargetUserID,
+            SessionID: webrtcData.SessionID,
+            SDP: webrtcData.SDP,
+            ICECandidate: webrtcData.ICECandidate,
+            Reason: webrtcData.Reason,
+        },
+    }
+
+    messageBytes, err := json.Marshal(outgoinMsg)
+    if err != nil {
+        log.Printf("Error marshaling WebRTC message: %v", err)
+        h.sendErrorToClient(client, "Failed to process WebRTC message")
+        return
+    }
+
+    select {
+    case targetClient.send <- messageBytes:
+        log.Printf("WebRTC %s sent from %s to %s (session: %s)", 
+            msg.Type, client.UserID, webrtcData.TargetUserID, webrtcData.SessionID)
+    default:
+        log.Printf("Failed to send WebRTC message to %s", webrtcData.TargetUserID)
+        h.sendErrorToClient(client, "Failed to deliver WebRTC message")
+    }
+
+    if msg.Type == MessageTypeWebRTCOffer || msg.Type == MessageTypeWebRTCAnswer {
+        confirmationMsg := OutgoingMessage{
+            Type:     MessageTypeWebRTCOffer,
+            SenderID: "system",
+            Content:  "WebRTC message delivered",
+        }
+
+        confirmationBytes, err := json.Marshal(confirmationMsg)
+        if err == nil {
+            select {
+            case client.send <- confirmationBytes:
+            default:
+                log.Printf("Failed to send confirmation to %s", client.UserID)
+            }
+        }
+    }
+
+}
+
 // Helper methods for database queries
 func (h *Hub) getRoomMembers(roomID string) ([]*models.RoomMember, error) {
     var members []*models.RoomMember

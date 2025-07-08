@@ -14,6 +14,10 @@ const (
 	MessageTypeError         WebSocketMessageType = "error"
 	MessageTypePing          WebSocketMessageType = "ping"
 	MessageTypePong          WebSocketMessageType = "pong"
+	MessageTypeWebRTCOffer   WebSocketMessageType = "webrtc_offer"
+	MessageTypeWebRTCAnswer  WebSocketMessageType = "webrtc_answer"
+	MessageTypeWebRTCICE     WebSocketMessageType = "webrtc_ice"
+	MessageTypeWebRTCHangup  WebSocketMessageType = "webrtc_hangup"
 )
 
 // IncomingMessage represents a message received from a client
@@ -23,6 +27,7 @@ type IncomingMessage struct {
 	ThreadID  *string             `json:"thread_id,omitempty"`
 	Content   string              `json:"content"`
 	ContentType string            `json:"content_type,omitempty"`
+	WebRTC      *WebRTCMessage      `json:"webrtc,omitempty"`
 }
 
 // OutgoingMessage represents a message sent to clients
@@ -36,4 +41,13 @@ type OutgoingMessage struct {
 	ContentType string              `json:"content_type"`
 	CreatedAt   time.Time           `json:"created_at"`
 	Error       string              `json:"error,omitempty"`
+	WebRTC      *WebRTCMessage      `json:"webrtc,omitempty"`
+}
+
+type WebRTCMessage struct {
+    TargetUserID string      `json:"target_user_id"`
+    SessionID    string      `json:"session_id"`
+    SDP          interface{} `json:"sdp,omitempty"`
+    ICECandidate interface{} `json:"ice_candidate,omitempty"`
+    Reason       string      `json:"reason,omitempty"`
 }

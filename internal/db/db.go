@@ -16,8 +16,14 @@ var (
 func Init(c *config.Config) error {
 	var err error
 	db, err = gorm.Open(mysql.Open(c.DatabaseURL), &gorm.Config{
+		NowFunc: func() time.Time {
+			return time.Now().UTC()
+		},
 		Logger: logger.Default.LogMode(logger.Info),
 	})
+
+	db.Exec("SET time_zone = '+00:00'")
+	
 	if err != nil {
 		return err
 	}

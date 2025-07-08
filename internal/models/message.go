@@ -44,9 +44,9 @@ type Message struct {
 	ContentType string     `json:"content_type" gorm:"column:content_type;type:enum('text','image_url','file_url','system_notification','call_started','call_ended');not null;default:'text';index:idx_messages_content_type"`
 	Content     string     `json:"content" gorm:"column:content;type:text;not null"`
 	Metadata    *Metadata  `json:"metadata" gorm:"column:metadata;type:json"`
-	CreatedAt   time.Time  `json:"created_at" gorm:"column:created_at;not null;autoCreateTime;index:idx_messages_room_id_created_at,priority:2;index:idx_messages_thread_id_created_at,priority:2;index:idx_messages_created_at"`
-	UpdatedAt   *time.Time `json:"updated_at" gorm:"column:updated_at;type:timestamp"`
-	DeletedAt   *time.Time `json:"deleted_at" gorm:"column:deleted_at;type:timestamp"`
+	CreatedAt   time.Time  `json:"created_at" gorm:"column:created_at;not null;autoCreateTime;type:datetime(3);index:idx_messages_room_id_created_at,priority:2;index:idx_messages_thread_id_created_at,priority:2;index:idx_messages_created_at"`
+	UpdatedAt   *time.Time `json:"updated_at" gorm:"column:updated_at;type:datetime(3)"`
+	DeletedAt   *time.Time `json:"deleted_at" gorm:"column:deleted_at;type:datetime(3)"`
 }
 
 func (Message) TableName() string {

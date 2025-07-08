@@ -4,6 +4,7 @@ import (
 	"converse/internal/db"
 	"converse/internal/models"
 	"errors"
+	"log"
 
 	"gorm.io/gorm"
 )
@@ -47,28 +48,41 @@ func (m *MessageRepository) StoreMessage(message *models.Message) error {
 
 // GetMessagesByRoomID retrieves messages for a specific room with pagination
 func (m *MessageRepository) GetMessagesByRoomID(roomID string, limit int, offset int) ([]*models.Message, error) {
-	var messages []*models.Message
+    var messages []*models.Message
 
-	err := m.db.Where("room_id = ? AND deleted_at IS NULL", roomID).
-		Order("created_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&messages).Error
+    err := m.db.Where("room_id = ? AND deleted_at IS NULL", roomID).
+        Order("created_at DESC").
+        Limit(limit).
+        Offset(offset).
+        Find(&messages).Error
 
-	return messages, err
+    if err != nil {
+        return nil, err
+    }
+
+    return messages, err
 }
 
 // GetMessagesByThreadID retrieves messages for a specific thread with pagination
 func (m *MessageRepository) GetMessagesByThreadID(threadID string, limit int, offset int) ([]*models.Message, error) {
-	var messages []*models.Message
+    var messages []*models.Message
 
-	err := m.db.Where("thread_id = ? AND deleted_at IS NULL", threadID).
-		Order("created_at DESC").
-		Limit(limit).
-		Offset(offset).
-		Find(&messages).Error
+    err := m.db.Where("thread_id = ? AND deleted_at IS NULL", threadID).
+        Order("created_at DESC").
+        Limit(limit).
+        Offset(offset).
+        Find(&messages).Error
 
-	return messages, err
+    if err != nil {
+        return nil, err
+    }
+
+    log.Printf("Retrieved %d messages for thread %s:", len(messages), threadID)
+    for i, msg := range messages {
+        log.Printf("  Message %d: ID=%s, CreatedAt=%v", i+1, msg.MessageID, msg.CreatedAt)
+    }
+
+    return messages, err
 }
 
 // DB returns the database connection for use by other components
