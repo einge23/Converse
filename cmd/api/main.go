@@ -55,6 +55,7 @@ func main() {
 	addr := ":" + port
 	if err := r.Run(addr); err != nil {
 		log.Fatalf("Failed to start server: %v", err)
+		
 	}
 }
 
@@ -66,8 +67,6 @@ func setupRoutes(r *gin.Engine) {
 		friendRequestHandler := handlers.NewFriendRequestHandler()
 		friendshipHandler := handlers.NewFriendshipHandler()
 		messageHandler := handlers.NewMessageHandler()
-		userHandler := handlers.NewUserHandler()
-
 
         // Auth routes
         auth := v1.Group("/auth")
@@ -90,11 +89,6 @@ func setupRoutes(r *gin.Engine) {
             {
                 auth.POST("/logout", authHandler.Logout)
             }
-
-			users := protected.Group("/users")
-            {
-                users.PUT("/status", userHandler.UpdateStatus)
-            }
 			
 			friend_requests := protected.Group("/friend-requests")
 			{
@@ -115,6 +109,7 @@ func setupRoutes(r *gin.Engine) {
 			}
 			
 			friendships := protected.Group("/friends").Use(middleware.AuthMiddleware())
+			
 			{
 				friendships.GET("/", friendshipHandler.GetFriends)
 			}

@@ -3,7 +3,6 @@ package repositories
 import (
 	"converse/internal/db"
 	"converse/internal/models"
-	"time"
 
 	"gorm.io/gorm"
 )
@@ -86,13 +85,4 @@ func (r *UserRepository) FindPublicUserByID(userID string) (*models.PublicUser, 
 		return nil, err
 	}
 	return user.ToPublicUser(), nil
-}
-
-func (r *UserRepository) UpdateStatus(userID string, status models.UserStatus) error {
-	return r.db.Model(&models.User{}).
-        Where("user_id = ?", userID).
-        Updates(map[string]any{
-            "status":         status,
-            "last_active_at": time.Now(),
-        }).Error
 }
