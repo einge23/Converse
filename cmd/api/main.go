@@ -7,6 +7,7 @@ import (
 	"converse/internal/db"
 	"converse/internal/handlers"
 	"converse/internal/middleware"
+	"converse/internal/services"
 	"converse/migrations"
 
 	"github.com/gin-contrib/cors"
@@ -23,6 +24,10 @@ func main() {
 
 	if err := migrations.RunMigrations(); err != nil {
         log.Fatalf("Failed to run migrations: %v", err)
+    }
+
+	if err := services.InitServices(cfg.BucketName, cfg.Region); err != nil {
+        log.Fatal("Failed to initialize services:", err)
     }
 
 	if cfg.IsProduction() {
@@ -67,6 +72,7 @@ func setupRoutes(r *gin.Engine) {
 		friendRequestHandler := handlers.NewFriendRequestHandler()
 		friendshipHandler := handlers.NewFriendshipHandler()
 		messageHandler := handlers.NewMessageHandler()
+        uploadHandler := handlers.NewUploadHandler()
 
         // Auth routes
         auth := v1.Group("/auth")
@@ -88,6 +94,12 @@ func setupRoutes(r *gin.Engine) {
             auth := protected.Group("/auth")
             {
                 auth.POST("/logout", authHandler.Logout)
+            }
+
+			upload := protected.Group("/upload")
+            {
+                upload.POST("/file", uploadHandler.UploadFile)
+                upload.POST("/avatar", uploadHandler.UploadAvatar)
             }
 			
 			friend_requests := protected.Group("/friend-requests")

@@ -14,6 +14,8 @@ type Config struct {
 	Environment     string
 	LogLevel        string
 	DatabaseURL     string
+	BucketName      string
+	Region          string
 }
 
 func New() *Config {
@@ -29,6 +31,8 @@ func New() *Config {
 		Environment:     getEnv("ENVIRONMENT", "development"),
 		LogLevel:        getEnv("LOG_LEVEL", "info"),
 		DatabaseURL:     getEnv("DATABASE_URL", ""),
+		BucketName:      getEnv("CONVERSE_AWS_BUCKET", ""),
+		Region: 		 getEnv("AWS_REGION", "us-east-2"),
 	}
 }
 
