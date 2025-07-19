@@ -47,7 +47,6 @@ func (s *AuthService) Register(req types.RegisterRequest, ipAddress, userAgent, 
 		Email:        req.Email,
 		PasswordHash: string(hashedPassword),
 		DisplayName:  req.DisplayName,
-		Status:       models.StatusOffline,
 	}
 
 	if err := s.userRepo.Create(user); err != nil {

@@ -92,7 +92,7 @@ func (r *FriendRequestRepository) GetUserFriendRequests(userID string) ([]*frien
 		Select(`fr.friend_request_id, fr.requester_id, fr.recipient_id, fr.status, fr.created_at, fr.updated_at,
 			u.user_id as user_user_id, u.username as user_username, u.email as user_email, 
 			u.display_name as user_display_name, u.avatar_url as user_avatar_url, 
-			u.status as user_status, u.last_active_at as user_last_active_at, 
+			u.last_active_at as user_last_active_at, 
 			u.created_at as user_created_at, u.updated_at as user_updated_at`).
 		Joins("JOIN users u ON fr.requester_id = u.user_id").
 		Where("fr.recipient_id = ? AND fr.status = ?", userID, "pending").
