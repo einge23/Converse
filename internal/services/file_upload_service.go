@@ -25,6 +25,8 @@ type UploadResult struct {
 	URL string
 	Key string
 	Location string
+	FileSize int64
+	Filename string
 }
 
 func NewFileUploadService(bucket, region string) (*FileUploadService, error) {
@@ -97,6 +99,42 @@ func (s *FileUploadService) UploadFromReader(ctx context.Context, reader io.Read
         URL:      result.Location,
         Key:      key,
         Location: result.Location,
+    }, nil
+}
+
+func (s *FileUploadService) UploadMessageAttachment(ctx context.Context, file multipart.File, header *multipart.FileHeader, userID string, roomID *string, threadID *string) (*UploadResult, error) {
+    ext := filepath.Ext(header.Filename)
+    if ext == "" {
+        return nil, fmt.Errorf("no file extension found")
+    }
+
+    var key string
+    if roomID != nil {
+        key = fmt.Sprintf("messages/rooms/%s/%s/%d%s", *roomID, userID, time.Now().Unix(), ext)
+    } else if threadID != nil {
+        key = fmt.Sprintf("messages/threads/%s/%s/%d%s", *threadID, userID, time.Now().Unix(), ext)
+    } else {
+        return nil, fmt.Errorf("either roomID or threadID must be provided")
+    }
+
+    contentType := s.getContentType(ext)
+
+    result, err := s.uploader.Upload(ctx, &s3.PutObjectInput{
+        Bucket:      aws.String(s.bucket),
+        Key:         aws.String(key),
+        Body:        file,
+        ContentType: aws.String(contentType),
+    })
+    if err != nil {
+        return nil, fmt.Errorf("failed to upload file: %w", err)
+    }
+
+    return &UploadResult{
+        URL:      result.Location,
+        Key:      key,
+        Location: result.Location,
+        FileSize: header.Size,
+        Filename: header.Filename,
     }, nil
 }
 

@@ -9,19 +9,16 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// MessageHandler handles HTTP requests related to messages
 type MessageHandler struct {
 	messageService *services.MessageService
 }
 
-// NewMessageHandler creates a new message handler
 func NewMessageHandler() *MessageHandler {
 	return &MessageHandler{
 		messageService: services.NewMessageService(),
 	}
 }
 
-// GetMessagesByRoomID handles the request to get paginated messages for a room
 func (h *MessageHandler) GetMessagesByRoomID(c *gin.Context) {
 	roomID := c.Param("room_id")
 	if roomID == "" {
@@ -29,10 +26,8 @@ func (h *MessageHandler) GetMessagesByRoomID(c *gin.Context) {
 		return
 	}
 
-	// Parse pagination parameters with defaults
 	page, pageSize := h.getPaginationParams(c)
 
-	// Get messages from service
 	paginatedMessages, err := h.messageService.GetMessagesByRoomID(roomID, page, pageSize)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve messages"})
@@ -42,7 +37,6 @@ func (h *MessageHandler) GetMessagesByRoomID(c *gin.Context) {
 	c.JSON(http.StatusOK, paginatedMessages)
 }
 
-// GetMessagesByThreadID handles the request to get paginated messages for a thread
 func (h *MessageHandler) GetMessagesByThreadID(c *gin.Context) {
 	threadID := c.Param("thread_id")
 	if threadID == "" {

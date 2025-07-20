@@ -9,10 +9,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// Metadata represents the JSON metadata field for messages
 type Metadata map[string]interface{}
 
-// Value implements the driver.Valuer interface for database storage
 func (m Metadata) Value() (driver.Value, error) {
 	if m == nil {
 		return nil, nil
@@ -20,7 +18,6 @@ func (m Metadata) Value() (driver.Value, error) {
 	return json.Marshal(m)
 }
 
-// Scan implements the sql.Scanner interface for database retrieval
 func (m *Metadata) Scan(value interface{}) error {
 	if value == nil {
 		*m = nil
@@ -35,7 +32,6 @@ func (m *Metadata) Scan(value interface{}) error {
 	return json.Unmarshal(bytes, m)
 }
 
-// Message represents a message in the chat application (unified for rooms and direct messages)
 type Message struct {
 	MessageID   string     `json:"message_id" gorm:"column:message_id;type:char(36);primaryKey"`
 	RoomID      *string    `json:"room_id" gorm:"column:room_id;type:char(36);index:idx_messages_room_id_created_at,priority:1;constraint:OnDelete:CASCADE"`
@@ -58,4 +54,9 @@ func (m *Message) BeforeCreate(tx *gorm.DB) (err error) {
 		m.MessageID = uuid.New().String()
 	}
 	return nil
+}
+
+type MessageWithAttachments struct {
+    Message
+    Attachments []MessageAttachment `json:"attachments"`
 }
